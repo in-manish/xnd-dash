@@ -1,3 +1,13 @@
+# CI runs on every push/PR. On push to main it also publishes the Vite `dist/`
+# output to GitHub Pages (not the repo root — serving source causes /src/main.jsx
+# and MIME type errors).
+#
+# GitHub Pages: Settings → Pages → Build and deployment → Source: GitHub Actions.
+# Custom domain: add the same hostname under Pages → Custom domain (CNAME is in public/).
+#
+# Self-hosted (nginx/VPS): copy only the contents of `dist/` to your web root after
+# `npm run build`, or extend this workflow with rsync/FTP using repository secrets.
+
 name: CI
 
 on:
@@ -5,6 +15,9 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+
+permissions:
+  contents: read
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -34,11 +47,24 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Upload build artifact
+      - name: Upload Pages artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: dist
           path: dist
-          if-no-files-found: error
-          retention-days: 7
+
+  deploy-pages:
+    name: Deploy to GitHub Pages
+    needs: lint-and-build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
