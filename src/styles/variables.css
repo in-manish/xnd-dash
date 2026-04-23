@@ -58,12 +58,6 @@
   --primary: 160 84% 39%;
 }
 
-* {
-  box-sizing: border-box;
-  margin: 0;
-  padding: 0;
-}
-
 body {
   font-family: var(--font-body);
   background: hsl(var(--background));

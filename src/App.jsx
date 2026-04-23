@@ -1,8 +1,10 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Layout from './components/Layout';
-import Dashboard from './views/Dashboard';
+import Dashboard from './views/dashboard/Dashboard';
 import Login from './views/Login';
+import AppConfig from './views/app-config/AppConfig';
+import HostConfig from './views/host-config/HostConfig';
 import useAuthStore from './store/useAuthStore';
 import { useTenant } from './hooks/useTenant';
 import './styles/variables.css';
@@ -63,6 +65,24 @@ function App() {
           element={
             <ProtectedRoute>
               <div className="glass" style={{ padding: '2rem' }}>Settings Placeholder</div>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/app-config"
+          element={
+            <ProtectedRoute>
+              <AppConfig />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/host-config"
+          element={
+            <ProtectedRoute>
+              <HostConfig />
             </ProtectedRoute>
           }
         />

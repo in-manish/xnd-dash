@@ -84,8 +84,17 @@ const Login = () => {
     };
 
     try {
-      const data = await AuthService.login({ email, password }, app, env);
-      setUser(data, data.token);
+      const authData = await AuthService.login({ email, password });
+
+      const token = authData?.token || authData?.access_token || authData?.access;
+      if (!token) {
+        throw new Error('Login succeeded but no auth token was returned.');
+      }
+
+      const fallbackName = email.split('@')[0] || 'Admin';
+      const userProfile = authData?.user || authData?.staff || { name: fallbackName, email };
+
+      setUser(userProfile, token);
       setTenant(selectedTenant);
       setEnvironment(env);
       navigate('/');
