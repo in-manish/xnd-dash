@@ -7,7 +7,6 @@ import HostDetailsModal from './components/HostDetailsModal';
 
 const HostConfig = () => {
   const [hosts, setHosts] = useState([]);
-  const [metaData, setMetaData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   
@@ -30,7 +29,6 @@ const HostConfig = () => {
       const data = await HostConfigService.getHostConfigs();
       const nextHosts = Array.isArray(data) ? data : (data?.results || []);
       setHosts(nextHosts);
-      setMetaData(data?.meta_data || null);
       setError(null);
     } catch (err) {
       setError('Failed to load host configurations. Please try again later.');

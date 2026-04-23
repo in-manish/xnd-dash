@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getCurrentTenant, getTenantColor } from '../api/config/tenantConfig';
+import { getCurrentTenant } from '../api/config/tenantConfig';
 import useTenantStore from '../store/useTenantStore';
 
 export const useTenant = () => {
@@ -8,13 +8,7 @@ export const useTenant = () => {
 
   useEffect(() => {
     const currentTenant = getCurrentTenant();
-    
-    const tenantToSet = currentTenant || {
-      tenantId: 'default',
-      appName: 'X-Dashboard',
-      domains: { production: '', staging: '' }
-    };
-    
+
     setTenant(currentTenant);
     setStoreTenant(currentTenant);
 
