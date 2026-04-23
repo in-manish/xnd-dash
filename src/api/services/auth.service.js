@@ -7,10 +7,8 @@ import { API_ENDPOINTS } from "../endpoints";
  * @returns {Promise} The API response data.
  */
 export const login = async (credentials) => {
-  // Login must always hit the production signin endpoint.
-  const response = await apiClient.post(API_ENDPOINTS.LOGIN, credentials, {
-    baseURL: "https://prod.opiniondigest.in",
-  });
-
+  // baseURL comes from apiClient + request interceptor (tenant + environment),
+  // which must be set before login (see Login.jsx).
+  const response = await apiClient.post(API_ENDPOINTS.LOGIN, credentials);
   return response.data;
 };

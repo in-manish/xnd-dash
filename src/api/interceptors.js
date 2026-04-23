@@ -17,7 +17,8 @@ apiClient.interceptors.request.use((config) => {
   const { tenant, environment } = useTenantStore.getState();
   
   if (environment === 'prod') {
-    config.baseURL = "https://prod.opiniondigest.in";
+    const host = tenant?.domains?.production;
+    config.baseURL = host ? `https://${host}` : 'https://prod.opiniondigest.in';
   } else if (tenant) {
     const domain = tenant.domains.staging;
     if (domain) {

@@ -84,6 +84,11 @@ const Login = () => {
     };
 
     try {
+      // Apply tenant/env before the request so axios interceptors use the same
+      // host the user selected (store defaults to persisted staging otherwise).
+      setTenant(selectedTenant);
+      setEnvironment(env);
+
       const authData = await AuthService.login({ email, password });
 
       const token = authData?.token || authData?.access_token || authData?.access;
@@ -95,8 +100,6 @@ const Login = () => {
       const userProfile = authData?.user || authData?.staff || { name: fallbackName, email };
 
       setUser(userProfile, token);
-      setTenant(selectedTenant);
-      setEnvironment(env);
       navigate('/');
     } catch (err) {
       setError(err.message || 'Verification failed. Please check your credentials.');
