@@ -53,13 +53,6 @@ const Navbar = () => {
         
         <div className="h-10 w-px bg-[hsl(var(--foreground)/0.12)]"></div>
  
-        <button 
-          onClick={() => window.dispatchEvent(new Event('openAddHostModal'))}
-          className="flex items-center gap-2.5 px-7 py-3.5 bg-primary text-[hsl(var(--primary-foreground))] rounded-xl font-bold text-base shadow-[0_10px_20px_hsl(var(--primary)/0.28)] hover:shadow-[0_14px_24px_hsl(var(--primary)/0.34)] hover:brightness-95 hover:-translate-y-0.5 transition-all active:scale-95 shrink-0 border border-primary/40"
-        >
-          <span>Add Host</span>
-        </button>
- 
         <div className="w-11 h-11 rounded-2xl bg-[hsl(var(--background)/0.8)] border border-[color:var(--glass-border)] shadow-sm overflow-hidden p-0.5 ml-1 cursor-pointer shrink-0 hover:shadow-md transition-shadow">
           <img 
             src={`https://ui-avatars.com/api/?name=${user?.name || 'Admin'}&background=0f172a&color=fff&bold=true&rounded=true`} 

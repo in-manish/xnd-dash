@@ -1,32 +1,61 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { HostConfigService } from '../../api/services';
-import { Loader2, AlertCircle, Filter, Download, Cloud, Ban, ExternalLink, TrendingUp, TrendingDown } from 'lucide-react';
+import { Loader2, AlertCircle, Download, Cloud, Ban, ExternalLink, TrendingUp, TrendingDown } from 'lucide-react';
 import HostConfigList from './components/HostConfigList';
 import HostConfigModal from './components/HostConfigModal';
 import HostDetailsModal from './components/HostDetailsModal';
+import HostListToolbar from './components/HostListToolbar';
+
+const triToBool = (v) => (v === 'yes' ? true : v === 'no' ? false : undefined);
 
 const HostConfig = () => {
   const [hosts, setHosts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [listRefreshing, setListRefreshing] = useState(false);
   const [error, setError] = useState(null);
-  
+  const firstListRequest = useRef(true);
+
+  const [searchDraft, setSearchDraft] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [ordering, setOrdering] = useState('');
+  const [group, setGroup] = useState('');
+  const [isTop, setIsTop] = useState('any');
+  const [isWhitelist, setIsWhitelist] = useState('any');
+  const [featuredMode, setFeaturedMode] = useState('default');
+  const [actionStatus, setActionStatus] = useState('');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+
   const [editingHost, setEditingHost] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
   const [detailsHost, setDetailsHost] = useState(null);
 
-  useEffect(() => {
-    fetchHosts();
-    
-    const handleOpenModal = () => handleCreate();
-    window.addEventListener('openAddHostModal', handleOpenModal);
-    return () => window.removeEventListener('openAddHostModal', handleOpenModal);
-  }, []);
+  const listQueryParams = useMemo(
+    () => ({
+      search: debouncedSearch.trim() || undefined,
+      ordering: ordering.trim() || undefined,
+      group: group || undefined,
+      is_top: triToBool(isTop),
+      is_whitelist: triToBool(isWhitelist),
+      is_featured: featuredMode === 'all' ? false : undefined,
+      action_status: actionStatus.trim() || undefined,
+    }),
+    [debouncedSearch, ordering, group, isTop, isWhitelist, featuredMode, actionStatus]
+  );
 
-  const fetchHosts = async () => {
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(searchDraft), 400);
+    return () => clearTimeout(t);
+  }, [searchDraft]);
+
+  const loadHosts = useCallback(async () => {
+    if (firstListRequest.current) {
+      setInitialLoading(true);
+    } else {
+      setListRefreshing(true);
+    }
     try {
-      setLoading(true);
-      const data = await HostConfigService.getHostConfigs();
+      const data = await HostConfigService.getHostConfigs(listQueryParams);
       const nextHosts = Array.isArray(data) ? data : (data?.results || []);
       setHosts(nextHosts);
       setError(null);
@@ -34,18 +63,25 @@ const HostConfig = () => {
       setError('Failed to load host configurations. Please try again later.');
       console.error('Error fetching host configs:', err);
     } finally {
-      setLoading(false);
+      firstListRequest.current = false;
+      setInitialLoading(false);
+      setListRefreshing(false);
     }
+  }, [listQueryParams]);
+
+  useEffect(() => {
+    loadHosts();
+  }, [loadHosts]);
+
+  const handleAddHost = () => {
+    setDetailsHost(null);
+    setEditingHost(null);
+    setShowModal(true);
   };
 
   const handleEdit = (host) => {
     setDetailsHost(null);
     setEditingHost(host);
-    setShowModal(true);
-  };
-
-  const handleCreate = () => {
-    setEditingHost(null);
     setShowModal(true);
   };
 
@@ -62,7 +98,7 @@ const HostConfig = () => {
         await HostConfigService.createHostConfig(payload);
       }
       setShowModal(false);
-      fetchHosts();
+      loadHosts();
     } catch (err) {
       console.error('Error saving host config:', err);
       alert('Failed to save host configuration.');
@@ -71,7 +107,7 @@ const HostConfig = () => {
     }
   };
 
-  if (loading) {
+  if (initialLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 bg-transparent">
         <Loader2 className="animate-spin text-blue-600" size={32} />
@@ -80,8 +116,8 @@ const HostConfig = () => {
     );
   }
 
-  const activeCount = hosts.filter(h => h.is_whitelist).length || 42;
-  const blacklistedCount = (hosts.filter(h => !h.is_whitelist).length).toString().padStart(2, '0') || '08';
+  const activeCount = hosts.filter((h) => h.is_whitelist).length;
+  const blacklistedCount = hosts.filter((h) => !h.is_whitelist).length;
 
   return (
     <div className="px-6 py-8 md:px-10 md:py-10 mx-auto animate-fadeIn w-full">
@@ -97,10 +133,6 @@ const HostConfig = () => {
         </div>
         
         <div className="flex items-center gap-3">
-          <button className="inline-flex items-center gap-2.5 px-5 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-base shadow-sm hover:bg-slate-50 transition-all">
-            <Filter size={18} strokeWidth={2.5} />
-            <span>Filters</span>
-          </button>
           <button className="inline-flex items-center gap-2.5 px-5 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl font-bold text-base shadow-sm hover:bg-slate-50 transition-all">
             <Download size={18} strokeWidth={2.5} />
             <span>Export</span>
@@ -130,7 +162,7 @@ const HostConfig = () => {
             <Ban size={22} className="text-red-500" strokeWidth={2.5} />
           </div>
           <div className="text-[48px] md:text-[54px] leading-none font-extrabold text-slate-900 mb-3">
-            {blacklistedCount}
+            {String(blacklistedCount).padStart(2, '0')}
           </div>
           <div className="text-sm font-bold text-slate-400 mt-auto">
             Monitoring 24/7
@@ -153,18 +185,34 @@ const HostConfig = () => {
       </div>
 
       {/* List Section Container */}
-      <div className="glass border border-[color:var(--glass-border)] rounded-2xl shadow-[0_8px_24px_hsl(var(--primary)/0.08)] overflow-hidden">
-        <div className="px-7 py-5 border-b border-[hsl(var(--foreground)/0.08)] flex items-center justify-between bg-[hsl(var(--background)/0.65)]">
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-bold text-[hsl(var(--foreground)/0.45)] uppercase tracking-wider">Sort by:</span>
-            <select className="text-base font-bold text-[hsl(var(--foreground))] bg-[hsl(var(--background)/0.75)] border border-[color:var(--glass-border)] rounded-lg px-3.5 py-2 outline-none cursor-pointer">
-              <option>Alphabetical</option>
-              <option>Status</option>
-              <option>Recently Added</option>
-            </select>
+      <div className="relative glass overflow-hidden rounded-2xl border border-[color:var(--glass-border)] shadow-[0_8px_24px_hsl(var(--primary)/0.08)]">
+        {listRefreshing && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center bg-[hsl(var(--background)/0.65)] backdrop-blur-[2px]">
+            <Loader2 className="animate-spin text-[hsl(var(--primary))]" size={28} />
           </div>
-          <div className="text-sm font-bold text-[hsl(var(--foreground)/0.45)]">
-            Displaying {Math.min(12, hosts.length)} of {hosts.length > 0 ? hosts.length : 50} configurations
+        )}
+        <div className="border-b border-[hsl(var(--foreground)/0.08)] bg-[hsl(var(--background)/0.65)] px-7 py-5">
+          <HostListToolbar
+            searchDraft={searchDraft}
+            onSearchDraftChange={setSearchDraft}
+            ordering={ordering}
+            onOrderingChange={setOrdering}
+            group={group}
+            onGroupChange={setGroup}
+            isTop={isTop}
+            onIsTopChange={setIsTop}
+            isWhitelist={isWhitelist}
+            onIsWhitelistChange={setIsWhitelist}
+            featuredMode={featuredMode}
+            onFeaturedModeChange={setFeaturedMode}
+            actionStatus={actionStatus}
+            onActionStatusChange={setActionStatus}
+            filtersOpen={filtersOpen}
+            onToggleFilters={() => setFiltersOpen((o) => !o)}
+            onAddHost={handleAddHost}
+          />
+          <div className="mt-4 text-sm font-bold text-[hsl(var(--foreground)/0.45)]">
+            {hosts.length} host{hosts.length === 1 ? '' : 's'} loaded
           </div>
         </div>
         
@@ -173,7 +221,9 @@ const HostConfig = () => {
             <AlertCircle className="mx-auto text-red-500 mb-3" size={32} />
             <h3 className="text-lg font-bold text-[hsl(var(--foreground))] mb-1">Failed to load hosts</h3>
             <p className="text-[hsl(var(--foreground)/0.6)] text-sm mb-4">{error}</p>
-            <button onClick={fetchHosts} className="text-primary font-bold text-sm hover:underline">Try again</button>
+            <button type="button" onClick={loadHosts} className="text-primary font-bold text-sm hover:underline">
+              Try again
+            </button>
           </div>
         ) : (
           <HostConfigList
