@@ -45,18 +45,7 @@
   --glass-border: rgba(255, 255, 255, 0.1);
 }
 
-/* Tenant Specific Themes */
-[data-tenant="dailybrief"] {
-  --primary: 250 84% 54%;
-}
-
-[data-tenant="travelnewsdigest"] {
-  --primary: 30 90% 50%;
-}
-
-[data-tenant="urbannewsdigest"] {
-  --primary: 160 84% 39%;
-}
+/* Tenant primary: set at runtime via applyTenantTheme() in tenantConfig.js */
 
 body {
   font-family: var(--font-body);

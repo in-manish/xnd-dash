@@ -4,7 +4,11 @@ import { Mail, Lock, Loader2, AlertCircle, Globe, Zap, ChevronDown, Check } from
 import { AuthService } from '../api/services';
 import useAuthStore from '../store/useAuthStore';
 import useTenantStore from '../store/useTenantStore';
-import { tenants } from '../api/config/tenantConfig';
+import {
+  tenants,
+  applyTenantTheme,
+  getCurrentTenant,
+} from '../api/config/tenantConfig';
 import '../styles/Login.css';
 
 const CustomSelect = ({ value, options, onChange, icon: Icon, label }) => {
@@ -24,7 +28,10 @@ const CustomSelect = ({ value, options, onChange, icon: Icon, label }) => {
   const selectedOption = options.find(opt => opt.value === value);
 
   return (
-    <div className="custom-select-container" ref={containerRef}>
+    <div
+      className={`custom-select-container${isOpen ? ' is-open' : ''}`}
+      ref={containerRef}
+    >
       <label className="select-label">{label}</label>
       <div 
         className={`custom-select-trigger ${isOpen ? 'active' : ''}`} 
@@ -38,7 +45,7 @@ const CustomSelect = ({ value, options, onChange, icon: Icon, label }) => {
       </div>
       
       {isOpen && (
-        <div className="custom-options glass">
+        <div className="custom-options">
           {options.map((option) => (
             <div 
               key={option.value}
@@ -68,8 +75,15 @@ const Login = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    document.body.setAttribute('data-tenant', app);
-    return () => document.body.removeAttribute('data-tenant');
+    const tenant = tenants.find((t) => t.tenantId === app) || tenants[0];
+    if (tenant) {
+      applyTenantTheme(tenant);
+    }
+    return () => {
+      if (!useAuthStore.getState().isAuthenticated) {
+        applyTenantTheme(getCurrentTenant());
+      }
+    };
   }, [app]);
 
   const handleSubmit = async (e) => {
@@ -88,6 +102,7 @@ const Login = () => {
       // host the user selected (store defaults to persisted staging otherwise).
       setTenant(selectedTenant);
       setEnvironment(env);
+      applyTenantTheme(selectedTenant);
 
       const authData = await AuthService.login({ email, password });
 

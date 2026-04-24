@@ -181,6 +181,10 @@
   display: grid;
   grid-template-columns: 1.5fr 1fr;
   gap: 1rem;
+  isolation: isolate;
+  /* Stack above following .input-group so open menus aren’t covered (Prod / Stage clicks). */
+  position: relative;
+  z-index: 10;
 }
 
 /* Custom Select Styles */
@@ -189,6 +193,10 @@
   flex-direction: column;
   gap: 0.5rem;
   position: relative;
+}
+
+.custom-select-container.is-open {
+  z-index: 20;
 }
 
 .select-label {
@@ -254,6 +262,12 @@
   border-radius: var(--radius-md);
   padding: 0.5rem;
   animation: slideIn 0.2s ease-out;
+  /* Opaque enough to read over fields below; still glass-friendly */
+  background: hsl(var(--card) / 0.97);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 12px 40px -8px hsl(var(--foreground) / 0.15);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
 @keyframes slideIn {

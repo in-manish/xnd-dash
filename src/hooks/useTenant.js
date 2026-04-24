@@ -1,31 +1,35 @@
 import { useEffect, useState } from 'react';
-import { getCurrentTenant } from '../api/config/tenantConfig';
+import { applyTenantTheme, getCurrentTenant, tenants } from '../api/config/tenantConfig';
 import useTenantStore from '../store/useTenantStore';
+
+const resolveInitialTenant = () => {
+  const persisted = useTenantStore.getState().tenant;
+  const persistedOk =
+    persisted &&
+    tenants.some((t) => t.tenantId === persisted.tenantId);
+  return persistedOk ? persisted : getCurrentTenant();
+};
 
 export const useTenant = () => {
   const [tenant, setTenant] = useState(null);
   const setStoreTenant = useTenantStore((state) => state.setTenant);
 
   useEffect(() => {
-    const currentTenant = getCurrentTenant();
+    const applyResolved = () => {
+      const resolved = resolveInitialTenant();
+      setTenant(resolved);
+      setStoreTenant(resolved);
+      applyTenantTheme(resolved);
+    };
 
-    setTenant(currentTenant);
-    setStoreTenant(currentTenant);
+    if (useTenantStore.persist.hasHydrated()) {
+      applyResolved();
+      return undefined;
+    }
 
-    // Dynamic color generation
-    const hash = currentTenant.tenantId.split('').reduce((acc, char) => char.charCodeAt(0) + ((acc << 5) - acc), 0);
-    const h = Math.abs(hash) % 360;
-    const s = 65;
-    const l = 55;
-    
-    // Apply dynamic CSS variables to :root in HSL format (h s% l%)
-    const root = document.documentElement;
-    root.style.setProperty('--primary', `${h} ${s}% ${l}%`);
-    root.setAttribute('data-tenant', currentTenant.tenantId);
-    
-    // Optional: Update document title
-    document.title = currentTenant.appName;
-
+    return useTenantStore.persist.onFinishHydration(() => {
+      applyResolved();
+    });
   }, []);
 
   return tenant;

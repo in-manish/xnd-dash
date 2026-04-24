@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import useTenantStore from './useTenantStore';
 
 const useAuthStore = create((set) => ({
   user: JSON.parse(localStorage.getItem('user')) || null,
@@ -16,6 +17,7 @@ const useAuthStore = create((set) => ({
   logout: () => {
     localStorage.removeItem('user');
     localStorage.removeItem('token');
+    useTenantStore.getState().setTenant(null);
     set({ user: null, token: null, isAuthenticated: false, error: null });
   },
 

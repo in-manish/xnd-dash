@@ -9,12 +9,21 @@
     }
   },
   {
-    "tenantId": "dailybrief_copy",
-    "appName": "Daily Brief Copy",
+    "tenantId": "tnd",
+    "appName": "Travel News Digest",
     "icon": "https://api.dicebear.com/7.x/identicon/svg?seed=dbc",
     "domains": {
-      "production": "prod.dailybrief.in",
+      "production": "api.travelnewsdigest.in",
       "staging": "stage-prod.dailybrief.in"
+    }
+  },
+  {
+    "tenantId": "und",
+    "appName": "Urban News Digest",
+    "icon": "",
+    "domains": {
+      "production": "api.urbannewsdigest.in",
+      "staging": "api.urbannewsdigest.in"
     }
   }
 ]
