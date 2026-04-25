@@ -3,6 +3,10 @@ import { CheckCircle2, XCircle } from 'lucide-react';
 
 const DetailRow = ({ label, value, type = 'text' }) => {
   const renderValue = () => {
+    if (value == null || value === '') {
+      return <span className="text-base font-bold text-foreground/35">—</span>;
+    }
+
     if (type === 'boolean' || (typeof value === 'string' && (value === 'true' || value === 'false'))) {
       const isTrue = value === true || value === 'true';
       return (
@@ -25,7 +29,11 @@ const DetailRow = ({ label, value, type = 'text' }) => {
       </div>
     );
 
-    return <span className="text-base font-bold text-foreground/80">{value || '—'}</span>;
+    if (typeof value === 'object') {
+      return <span className="break-all text-sm font-bold text-foreground/70">{JSON.stringify(value)}</span>;
+    }
+
+    return <span className="break-all text-base font-bold text-foreground/80">{String(value)}</span>;
   };
 
   return (
